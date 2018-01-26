@@ -1,7 +1,7 @@
 package window
 
 import (
-	"github.com/sciter-sdk/go-sciter"
+	"github.com/zhuwei/go-sciter"
 	// "runtime"
 )
 
