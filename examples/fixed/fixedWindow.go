@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/sciter-sdk/go-sciter"
-	"github.com/sciter-sdk/go-sciter/window"
+	"github.com/zhuwei/go-sciter"
+	"github.com/zhuwei/go-sciter/window"
 )
 
 func main() {
