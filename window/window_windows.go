@@ -10,7 +10,7 @@ import (
 	"unsafe"
 
 	"github.com/lxn/win"
-	"github.com/sciter-sdk/go-sciter"
+	"github.com/zhuwei/go-sciter"
 )
 
 var isShowWorkArea bool = false //use for no frame form
