@@ -30,7 +30,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/sciter-sdk/go-sciter"
+	"github.com/zhuwei/go-sciter"
 )
 
 func New(creationFlags sciter.WindowCreationFlag, rect *sciter.Rect) (*Window, error) {
