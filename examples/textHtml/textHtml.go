@@ -9,7 +9,21 @@ import (
 
 const (
 	html = `
-<html resizeable>
+<html resizeable window-frame="solid-with-shadow">
+	<head>
+    	<title></title>
+		<style>
+		html {
+			background: white;
+			width: 400dip;
+			height: 300dip;
+			border: 1dip solid threedlightshadow
+		}
+		body {
+        	background-image: url(bg.png);
+		}
+		</style>
+	</head>
 <body>
   <H1>test for element.Text and element.Html</H1>
   <div id="btns">
@@ -32,7 +46,10 @@ const (
 )
 
 func main() {
-	w, err := window.New(sciter.DefaultWindowCreateFlag, sciter.DefaultRect)
+
+	rect := sciter.NewRect(200, 400, 300, 400)
+	//DefaultWindowCreateFlag = SW_TITLEBAR | SW_RESIZEABLE | SW_CONTROLS | SW_MAIN | SW_ENABLE_DEBUG
+	w, err := window.New(sciter.SW_ALPHA|sciter.SW_GLASSY, rect)
 	if err != nil {
 		log.Fatal("sciter create window failed", err)
 	}
@@ -54,4 +71,8 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Println("html:", text)
+
+	w.SetTitle("Example")
+	w.Show()
+	w.Run()
 }
