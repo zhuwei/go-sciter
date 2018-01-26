@@ -1,0 +1,234 @@
+﻿<html window-frame="solid-with-shadow" window-icon="icon.png">
+  <head>
+    <title></title>
+    <style>
+    
+      html {
+          background: white;
+          width: 400dip;
+          height: 300dip;
+          border: 1dip solid #a9a9a9;//threedlightshadow;
+      }
+      body {
+          flow: vertical;
+          size: *;
+          margin: 0dip;
+      }
+      body > header {
+          width: *;
+          background: white;
+          flow: horizontal;
+      }
+      body > header > caption {
+          width: *;
+      }
+      body > main {
+          size: *;
+          background: white;
+          overflow: hidden;
+      }
+      button.window {
+          display: block;
+          width: 45dip;
+          height: 19dip;
+          margin: 0;
+          padding: 0;
+          background: 50% 50% no-repeat;
+          background-width: 45dip;
+          background-height: 19dip;
+      }
+      button.window:hover {
+          background-color: white;
+      }
+      button.window#minimize {
+          background-image: url(image/btn1.png);
+      }
+      button.window#minimize:hover {
+          background-image: url(image/btn2.png);
+      }
+      button.window#maximize {
+          background-image: url(image/btn3.png);
+      }
+      button.window#maximize:hover {
+          background-image: url(image/btn4.png);
+      }
+      button.window#maximize.restore {
+          background-image: url(image/btn5.png);
+      }
+      button.window#maximize.restore:hover {
+          background-image: url(image/btn6.png);
+      }
+      button.window#close {
+          background-image: url(image/btn7.png);
+      }
+      button.window#close:hover {
+          background-image: url(image/btn8.png);
+      }
+		.dialog{
+			width:100%;
+			height:100%;
+			z-index: 99;
+		}
+	  /*灰色遮罩层*/
+		.dialog-fade{
+			width:100%;
+			height:100%;
+			background:rgba(0, 0, 0, 0.2);
+			position: fixed;
+			left: 0;
+			top: 20;
+			z-index: 99;
+		}
+		/*弹出层*/
+		.dialog-pop{
+			width: 400px;
+			height: 300px;
+			background: #fff;
+			position: fixed;
+			left: 50%;
+			top: 50%;
+			margin-left: -200px;
+			margin-top: -150px;
+			z-index: 999;
+			border-radius: 5px;
+			box-shadow:0px 0px 20px #000;
+		}   
+		.dialog-pop h3.title{
+			text-align: center;
+			font-size: 22px;
+			color: #ce002c;
+		}
+		div.bar { context-menu: selector(menu#foo); }
+		div.baz { context-menu: url(test1.html); }
+    </style>
+    <script type="text/tiscript">
+	view.root.on("closerequest",function(evt) {
+		const REASONS = ["BY CHROME", "BY CODE", "BY LOAD"];
+		view.msgbox(#information, "closing " + REASONS[evt.reason]);
+		// evt.data = #cancel ; to cancel closing
+	});
+	
+    var x = 0;
+    function update() {
+     x = x + 1;
+     $(p).value = x;
+     return true;
+    }
+    
+    function self.ready() {
+		//view.state = View.WINDOW_SHOWN;
+		view.state = View.WINDOW_MAXIMIZED;//View.WINDOW_FULL_SCREEN;
+		$(button#maximize).attributes.toggleClass("restore", view.windowState == View.WINDOW_MAXIMIZED || View.WINDOW_FULL_SCREEN); 
+		
+		//view.msgbox((view.windowState == View.WINDOW_MAXIMIZED || View.WINDOW_FULL_SCREEN) ? "restore" : "aaaa");
+		var (cx,cy) = view.cursorLocation();
+		//stdout.println(cx);
+		//stdout.println(cy);
+		//view.move(cx / 2,cy / 2, true);
+		
+		view << event statechange {
+			//view.msgbox('111');
+			$(button#maximize).attributes.toggleClass("restore", view.windowState == View.WINDOW_MAXIMIZED); 
+		} 
+		
+		var edit = $(menu#foo);
+		edit.onControlEvent = function(event)
+		{
+		  switch(event.type) {
+			case Event.MENU_ITEM_CLICK: /* evt.target是点击的菜单项 */ 
+				view.msgbox(event.target.html);
+			break;
+		  }
+		}
+		
+		self.timer(1s, update);
+    }
+	
+	function self.closing() {
+		return true;
+	}
+	
+	function callback(abc){
+	    view.msgbox(#information,abc);
+	}
+	
+	$(#btn).on("click",function(){
+	    var obj = {num:100, str:"Hello World"};
+	    view.getNetInformation(1,"test",callback, obj);
+		$(.dialog).style.set {
+		   display: "block"
+		};
+	});
+	$(#btn_close_dialog).on("click",function(){
+	    $(.dialog).style.set {
+		   display: "none"
+		};
+	});
+	
+	var out = $(pre#out);
+    
+      self.on("click","#open",function(){
+      
+        const filter = "HTML Files (*.htm,*.html)|*.htm;*.html|All Files (*.*)|*.*";
+        const defaultExt = "html";
+        const initialPath = System.path(#USER_DOCUMENTS);
+        const caption = "Select file to open";
+      
+        var fn = view.selectFile(#open, filter, defaultExt, initialPath, caption );
+        out.text = fn || "{rejected}";
+        return true;
+      });
+      
+      self.on("click","#save",function(){
+      
+        const filter = "HTML Files (*.htm,*.html)|*.htm;*.html|All Files (*.*)|*.*";
+        const defaultExt = "html";
+        const initialPath = System.path(#USER_DOCUMENTS,"newdoc");
+        const caption = "Select file to save";
+      
+        var fn = view.selectFile(#save, filter, defaultExt, initialPath, caption );
+        out.text = fn || "{rejected}";
+        return true;
+      });
+    </script>
+  </head>
+<body>
+  <header role="window-caption">
+    <caption disable>Caption</caption>
+    <button.window role="window-minimize" #minimize></button>
+    <button.window role="window-maximize" #maximize></button>
+    <button.window role="window-close" #close></button>
+  </header>
+  <main role="window-body">
+	<button id="btn">Click Me</button>
+    <p/>
+	
+	<div class="bar">有#foo上下文菜单</div> 
+	<div class="baz">有test1.html上下文菜单</div> 
+
+	<menu class=context id="foo">
+		<caption>.bar元素的#foo菜单</caption>
+		<li id="i1">第一项</li>
+		<li id="i2">第二项</li>
+		<li id="i3">第三项</li>
+		<li id="i4">第四项</li>
+	</menu>
+	
+	<button #open>Open</button>
+	<button #save>Save</button>
+	<pre#out>
+	</pre>
+  
+	<div class="dialog">
+		<div class="dialog-fade"></div>
+		<div class="dialog-pop">
+			<h3 class="title">
+				中间填写内容
+			</h3>
+			<p/>
+			<button id="btn_close_dialog">关闭</button>
+		</div>
+	</div>
+  </main>
+</body>
+</html>

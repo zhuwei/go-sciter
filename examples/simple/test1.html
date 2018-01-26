@@ -1,0 +1,84 @@
+﻿<html>
+  <head>
+  <style>
+  
+  select {
+            width: 230dip;
+            height: 30dip;
+            background-color: #ffffff;
+            border: 1px solid #8ca4c8;
+            border-radius: 0.2em;
+            margin: 0;
+            padding: 0;
+            background-image:none;
+            foreground-image:none;
+        }
+
+        select > popup {
+          background:transparent;
+          border:none;
+          width:253dip;
+          padding:0;
+          margin-top:2dip;
+        }
+  
+        select > popup > div {
+            margin:0 22dip 22dip 0; 
+            border-radius: 0.2em;
+            border:1dip solid #ccc;
+            box-shadow: 5dip 5dip 5dip #ddd;
+            overflow:hidden;
+        }
+
+        select > caption, select option {
+            vertical-align: middle;
+            flow: horizontal;
+            
+        }
+
+        select option {
+            width: *;
+            height: 30dip;
+            margin: 0;
+            padding: 0;
+            color:black;
+        }
+
+        select option:hover {
+            background-color: #d5ebff;
+        }
+
+        select option:active {
+            background-color: #c4e3ff;
+        }
+
+        select option:selected {
+            background-color: #c4e3ff;
+        }
+
+        select option:checked {
+            background-color: #c4e3ff;
+        }
+
+        select span {
+            width: *;
+        } 
+    
+  </style>  
+  </head>
+<body>
+  <select type="dropdown" name="opt_list">
+    <div>
+        <option value="1" selected>
+            <span>item 1</span>
+        </option>
+        <option value="2">
+            <span>item 2</span>
+        </option>
+        <option value="3">
+            <span>item 3</span>
+        </option>
+    </div>
+  </select>
+</body>
+</html>
