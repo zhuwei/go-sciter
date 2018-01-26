@@ -182,7 +182,9 @@
 
 
   // defining "official" API functions:
-
+    HSARCHIVE SCAPI SciterOpenArchive (LPCBYTE archiveData, UINT archiveDataLength) { return SAPI(NULL)->SciterOpenArchive (archiveData,archiveDataLength); }
+    BOOL SCAPI SciterGetArchiveItem (HSARCHIVE harc, LPCWSTR path, LPCBYTE* pdata, UINT* pdataLength){return SAPI(NULL)->SciterGetArchiveItem (harc,path,pdata,pdataLength); }
+    
     LPCWSTR SCAPI SciterClassName () { return SAPI(NULL)->SciterClassName(); }
     UINT    SCAPI SciterVersion (BOOL major) { return SAPI(NULL)->SciterVersion (major); }
     BOOL    SCAPI SciterDataReady (HWINDOW hwnd,LPCWSTR uri,LPCBYTE data, UINT dataLength) { return SAPI(NULL)->SciterDataReady (hwnd,uri,data,dataLength); }
