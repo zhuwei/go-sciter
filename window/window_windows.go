@@ -94,6 +94,20 @@ func (s *Window) Run() {
 	}
 }
 
+func (s *Window) RunWithHandler(handler func(*Window)) {
+	// for system drag-n-drop
+	// win.OleInitialize()
+	// defer win.OleUninitialize()
+	s.run()
+	// start main gui message loop
+	var msg win.MSG
+	for win.GetMessage(&msg, 0, 0, 0) > 0 {
+		win.TranslateMessage(&msg)
+		win.DispatchMessage(&msg)
+		handler(s)
+	}
+}
+
 func GetSystemMetrics() (int32, int32) {
 	return win.GetSystemMetrics(win.SM_CXSCREEN), win.GetSystemMetrics(win.SM_CYSCREEN)
 }
