@@ -1,4 +1,4 @@
-﻿<html window-frame="solid-with-shadow" window-icon="icon.png">
+<html window-frame="solid-with-shadow" window-icon="icon.png">
   <head>
     <title></title>
     <style>
@@ -152,12 +152,27 @@
 	    view.msgbox(#information,abc);
 	}
 	
+	function loadDataCallback(abc){
+	    view.msgbox(#information, abc.ip);
+	}
+	
 	$(#btn).on("click",function(){
 	    var obj = {num:100, str:"Hello World"};
 	    view.getNetInformation(1,"test",callback, obj);
 		$(.dialog).style.set {
 		   display: "block"
 		};
+	});
+	var taskNo = 0;
+	$(#btnLoadData).on("click",function(){
+	    var obj = {num:100, str:"Hello World"};
+	    view.loadData(obj, loadDataCallback);
+		
+        /*++taskNo;
+        function onProgress(p100) { #span_print.html = p100; }
+        function onDone(taskId) { #span_print.html = "Done!"; }
+
+        view.execTask(taskNo,onProgress,onDone);*/
 	});
 	$(#btn_close_dialog).on("click",function(){
 	    $(.dialog).style.set {
@@ -201,6 +216,8 @@
   </header>
   <main role="window-body">
 	<button id="btn">Click Me</button>
+	<button id="btnLoadData">Thread Load Data</button>
+	<span id="span_print"></span>
     <p/>
 	
 	<div class="bar">有#foo上下文菜单</div> 
