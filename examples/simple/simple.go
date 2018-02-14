@@ -1,8 +1,14 @@
 package main
 
 import (
+	"errors"
+	"io"
 	"log"
+	"os"
+	"runtime"
 	"time"
+
+	jwlib "github.com/zhuwei/go-sciter/examples/simple/jwlib"
 
 	"github.com/zhuwei/go-sciter"
 	"github.com/zhuwei/go-sciter/window"
@@ -11,6 +17,36 @@ import (
 var gCh chan map[string]interface{}
 
 func main() {
+
+	//必须要先声明defer，否则不能捕获到panic异常
+	defer func() {
+		if r := recover(); r != nil {
+			err := errors.New(``)
+			switch x := r.(type) {
+			case string:
+				err = errors.New(x)
+			case error:
+				err = x
+			default:
+				err = errors.New("Unknow panic")
+			}
+			jwlib.WriteLog(`[recover]` + err.Error())
+		}
+	}()
+
+	jwlib.WriteLog(`程序启动`)
+
+	jwlib.WriteLog(`系统架构:` + runtime.GOARCH)
+	jwlib.WriteLog(`操作系统:` + runtime.GOOS)
+
+	var sciterDll string
+	if runtime.GOARCH == `386` {
+		sciterDll = `lib\sciter32.dll`
+	} else {
+		sciterDll = `lib\sciter64.dll`
+	}
+	copyFile(sciterDll, `sciter.dll`)
+
 	gCh = make(chan map[string]interface{}, 1)
 
 	var err error
@@ -25,6 +61,8 @@ func main() {
 	setEventHandler(w)
 	w.Show()
 	w.RunWithHandler(messageHanlder)
+
+	jwlib.WriteLog(`程序结束`)
 }
 
 func setEventHandler(w *window.Window) {
@@ -85,5 +123,37 @@ func messageHanlder(w *window.Window) {
 			ok = true
 		}
 	default:
+	}
+}
+
+//拷贝文件  要拷贝的文件路径 拷贝到哪里
+func copyFile(source, dest string) bool {
+	if source == "" || dest == "" {
+		log.Println("source or dest is null")
+		return false
+	}
+	//打开文件资源
+	source_open, err := os.Open(source)
+	//养成好习惯。操作文件时候记得添加 defer 关闭文件资源代码
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+	defer source_open.Close()
+	//只写模式打开文件 如果文件不存在进行创建 并赋予 644的权限。详情查看linux 权限解释
+	dest_open, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY, 644)
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+	//养成好习惯。操作文件时候记得添加 defer 关闭文件资源代码
+	defer dest_open.Close()
+	//进行数据拷贝
+	_, copy_err := io.Copy(dest_open, source_open)
+	if copy_err != nil {
+		log.Println(copy_err.Error())
+		return false
+	} else {
+		return true
 	}
 }

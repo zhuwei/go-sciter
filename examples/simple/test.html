@@ -1,4 +1,4 @@
-<html window-frame="solid-with-shadow" window-icon="icon.png">
+﻿<html window-frame="solid-with-shadow" window-icon="icon.png">
   <head>
     <title></title>
     <style>
@@ -7,7 +7,7 @@
           background: white;
           width: 400dip;
           height: 300dip;
-          border: 1dip solid #a9a9a9;//threedlightshadow;
+          border: 1dip solid #dcdcdc;//threedlightshadow #a9a9a9;
       }
       body {
           flow: vertical;
@@ -117,7 +117,7 @@
     
     function self.ready() {
 		//view.state = View.WINDOW_SHOWN;
-		view.state = View.WINDOW_MAXIMIZED;//View.WINDOW_FULL_SCREEN;
+		//view.state = View.WINDOW_MAXIMIZED;//View.WINDOW_FULL_SCREEN;
 		$(button#maximize).attributes.toggleClass("restore", view.windowState == View.WINDOW_MAXIMIZED || View.WINDOW_FULL_SCREEN); 
 		
 		//view.msgbox((view.windowState == View.WINDOW_MAXIMIZED || View.WINDOW_FULL_SCREEN) ? "restore" : "aaaa");
@@ -158,21 +158,15 @@
 	
 	$(#btn).on("click",function(){
 	    var obj = {num:100, str:"Hello World"};
-	    view.getNetInformation(1,"test",callback, obj);
+	    //view.getNetInformation(1,"test",callback, obj);
 		$(.dialog).style.set {
 		   display: "block"
 		};
 	});
-	var taskNo = 0;
+	
 	$(#btnLoadData).on("click",function(){
 	    var obj = {num:100, str:"Hello World"};
 	    view.loadData(obj, loadDataCallback);
-		
-        /*++taskNo;
-        function onProgress(p100) { #span_print.html = p100; }
-        function onDone(taskId) { #span_print.html = "Done!"; }
-
-        view.execTask(taskNo,onProgress,onDone);*/
 	});
 	$(#btn_close_dialog).on("click",function(){
 	    $(.dialog).style.set {
