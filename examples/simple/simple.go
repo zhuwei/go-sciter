@@ -101,7 +101,15 @@ func setEventHandler(w *window.Window) {
 
 		}(args[1])
 
-		return sciter.NewValue()
+		ret := sciter.NewValue()
+		ret.Set("ip", sciter.NewValue("127.0.0.1"))
+		ret.Set("msg", sciter.NewValue("Go routine start"))
+
+		//html func loadDataCallback
+		fn := args[1]
+		fn.Invoke(sciter.NullValue(), "[Native Script]", ret)
+
+		return ret
 	})
 }
 
@@ -114,6 +122,7 @@ func messageHanlder(w *window.Window) {
 
 			ret := sciter.NewValue()
 			ret.Set("ip", sciter.NewValue("127.0.0.1"))
+			ret.Set("msg", sciter.NewValue("Go routine end"))
 			root, _ := w.GetRootElement()
 			root.CallFunction("loadDataCallback", ret)
 
