@@ -1,4 +1,4 @@
-﻿<html window-frame="solid-with-shadow" window-icon="icon.png">
+<html window-frame="solid-with-shadow" window-icon="icon.png">
   <head>
     <title></title>
     <style>
@@ -73,7 +73,7 @@
 		.dialog-fade{
 			width:100%;
 			height:100%;
-			background:rgba(0, 0, 0, 0.2);
+			background-color: rgba(0, 0, 0, .5);
 			position: fixed;
 			left: 0;
 			top: 20;
@@ -90,8 +90,9 @@
 			margin-left: -200px;
 			margin-top: -150px;
 			z-index: 999;
-			border-radius: 5px;
+			border-radius: 2px;
 			box-shadow:0px 0px 20px #000;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, .33);
 		}   
 		.dialog-pop h3.title{
 			text-align: center;
@@ -108,12 +109,17 @@
 		// evt.data = #cancel ; to cancel closing
 	});
 	
-    var x = 0;
-    function update() {
-     x = x + 1;
-     $(p).value = x;
-     return true;
-    }
+	var x = 0;
+	function update() {
+		x = x + 1;
+		$(p).value = x;
+/*
+		if (view.state == View.WINDOW_MAXIMIZED)
+			view.state = View.WINDOW_SHOWN;
+		else
+			view.state = View.WINDOW_MAXIMIZED;*/
+		return true;
+	}
     
     function self.ready() {
 		//view.state = View.WINDOW_SHOWN;
@@ -153,7 +159,7 @@
 	}
 	
 	function loadDataCallback(abc){
-	    view.msgbox(#information, abc.ip);
+	    view.msgbox(#information, abc.msg);
 	}
 	
 	$(#btn).on("click",function(){
@@ -199,6 +205,7 @@
         out.text = fn || "{rejected}";
         return true;
       });
+
     </script>
   </head>
 <body>
@@ -210,7 +217,7 @@
   </header>
   <main role="window-body">
 	<button id="btn">Click Me</button>
-	<button id="btnLoadData">Thread Load Data</button>
+	<button id="btnLoadData">Go Routine Load Data</button>
 	<span id="span_print"></span>
     <p/>
 	
