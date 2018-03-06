@@ -160,11 +160,12 @@ func delegateProc(hWnd win.HWND, message uint, wParam uintptr, lParam uintptr, p
 		win.PostQuitMessage(0)
 		*pHandled = 1
 	case win.WM_SIZE:
-		fmt.Println("WM_SIZE ...")
+		//fmt.Println("WM_SIZE ...")
 
 		if isShowWorkArea {
 			nStyle := int64(win.GetWindowLong(hWnd, win.GWL_STYLE))
 			//fmt.Println(nStyle & win.WS_CAPTION) //WS_CAPTION  WS_POPUP
+
 			//判断窗体样式是不是无边框
 			if (nStyle & win.WS_POPUP) != 0 {
 
@@ -191,16 +192,21 @@ func delegateProc(hWnd win.HWND, message uint, wParam uintptr, lParam uintptr, p
 					} else if left == 0 && right == screenW && bottom == screenH {
 						screenBottom = top //居下
 					}
+
 					//修改坐标和大小, 让任务栏显示出来
+					//win.SetWindowPos(hWnd, win.HWND_TOP, screenLeft, screenTop, screenRight-screenLeft, screenBottom-screenTop, win.SWP_SHOWWINDOW|win.SWP_FRAMECHANGED|win.SWP_DRAWFRAME|win.SWP_DEFERERASE)
+					win.SetWindowPos(hWnd, win.HWND_TOP, screenLeft, screenTop, screenRight-screenLeft, screenBottom-screenTop, win.SW_SHOWNORMAL)
 					win.SetWindowPos(hWnd, win.HWND_TOP, screenLeft, screenTop, screenRight-screenLeft, screenBottom-screenTop, win.SWP_SHOWWINDOW)
 				}
 			}
 		}
+		//win.UpdateWindow(hWnd)
+		//win.SendMessage(hWnd, win.WM_PAINT, wParam, lParam)
 
 	case win.WM_SIZING:
-		fmt.Println("WM_SIZING ...")
+		//fmt.Println("WM_SIZING ...")
 	case win.WM_GETMINMAXINFO:
-		fmt.Println("WM_GETMINMAXINFO ...")
+		//fmt.Println("WM_GETMINMAXINFO ...")
 	}
 	return 0
 }
