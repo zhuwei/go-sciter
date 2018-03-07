@@ -13,6 +13,10 @@ import (
 	"github.com/zhuwei/go-sciter"
 )
 
+const (
+	SPI_GETWORKAREA = 0x0030
+)
+
 var isShowWorkArea bool = false //use for no frame form
 
 func New(creationFlags sciter.WindowCreationFlag, rect *sciter.Rect) (*Window, error) {
@@ -112,7 +116,7 @@ func getFormCenterPoint(w, h int32) (x int32, y int32) {
 
 	rect := &win.RECT{0, 0, 0, 0}
 
-	if win.SystemParametersInfo(win.SPI_GETWORKAREA, 0, unsafe.Pointer(rect), 0) {
+	if win.SystemParametersInfo(SPI_GETWORKAREA, 0, unsafe.Pointer(rect), 0) {
 		x = (rect.Right-rect.Left-w)/2 + rect.Left
 		y = (rect.Bottom-rect.Top-h)/2 + rect.Top
 	} else {
@@ -149,7 +153,7 @@ func delegateProc(hWnd win.HWND, message uint, wParam uintptr, lParam uintptr, p
 
 				r := &win.RECT{0, 0, 0, 0}
 
-				if win.SystemParametersInfo(win.SPI_GETWORKAREA, 0, unsafe.Pointer(r), 0) {
+				if win.SystemParametersInfo(SPI_GETWORKAREA, 0, unsafe.Pointer(r), 0) {
 					info := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
 					info.PtMinTrackSize.X = rect.Right - rect.Left
 					info.PtMinTrackSize.Y = rect.Bottom - rect.Top
