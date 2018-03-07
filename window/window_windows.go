@@ -108,48 +108,18 @@ func (s *Window) RunWithHandler(handler func(*Window)) {
 	}
 }
 
-func GetSystemMetrics() (int32, int32) {
-	return win.GetSystemMetrics(win.SM_CXSCREEN), win.GetSystemMetrics(win.SM_CYSCREEN)
-}
+func getFormCenterPoint(w, h int32) (x int32, y int32) {
 
-func GetWorkArea() (int32, int32, int32, int32) {
-	s := "Shell_TrayWnd"
-	hWnd := win.FindWindow(StrInt(s), nil)
 	rect := &win.RECT{0, 0, 0, 0}
-	win.GetWindowRect(hWnd, rect)
-	return rect.Left, rect.Top, rect.Right, rect.Bottom
-}
 
-func StrPtr(s string) uintptr {
-	return uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(s)))
-}
-
-func StrInt(s string) *uint16 {
-	return (*uint16)(unsafe.Pointer(syscall.StringToUTF16Ptr(s)))
-}
-
-func getFormCenterPoint(w, h int32) (int32, int32) {
-
-	left, top, right, bottom := GetWorkArea()
-	screenW, screenH := GetSystemMetrics()
-
-	var screenLeft int32
-	var screenTop int32
-	screenRight := screenW
-	screenBottom := screenH
-	//除开任务栏宽高
-	if left == 0 && top == 0 && bottom == screenH {
-		screenLeft = right //居左
-	} else if left == 0 && top == 0 && right == screenW {
-		screenTop = bottom //居上
-	} else if top == 0 && right == screenW && bottom == screenH {
-		screenRight = left //居右
-	} else if left == 0 && right == screenW && bottom == screenH {
-		screenBottom = top //居下
+	if win.SystemParametersInfo(win.SPI_GETWORKAREA, 0, unsafe.Pointer(rect), 0) {
+		x = (rect.Right-rect.Left-w)/2 + rect.Left
+		y = (rect.Bottom-rect.Top-h)/2 + rect.Top
+	} else {
+		x = 0
+		y = 0
 	}
-
-	//计算非任务栏区域的中心坐标
-	return (screenRight-screenLeft-w)/2 + screenLeft, (screenBottom-screenTop-h)/2 + screenTop
+	return x, y
 }
 
 // delegate Windows GUI messsage
@@ -159,54 +129,38 @@ func delegateProc(hWnd win.HWND, message uint, wParam uintptr, lParam uintptr, p
 		// log.Println("closing window ...")
 		win.PostQuitMessage(0)
 		*pHandled = 1
+
 	case win.WM_SIZE:
 		//fmt.Println("WM_SIZE ...")
+
+	case win.WM_SIZING:
+		//fmt.Println("WM_SIZING ...")
+
+	case win.WM_GETMINMAXINFO:
+		//fmt.Println("WM_GETMINMAXINFO ...")
 
 		if isShowWorkArea {
 			nStyle := int64(win.GetWindowLong(hWnd, win.GWL_STYLE))
 			//fmt.Println(nStyle & win.WS_CAPTION) //WS_CAPTION  WS_POPUP
-
-			//判断窗体样式是不是无边框
 			if (nStyle & win.WS_POPUP) != 0 {
-
-				screenW, screenH := GetSystemMetrics()
 
 				rect := &win.RECT{0, 0, 0, 0}
 				win.GetWindowRect(hWnd, rect)
 
-				//判断窗体是否全屏
-				if rect.Left == 0 && rect.Top == 0 && screenW == rect.Right && screenH == rect.Bottom {
+				r := &win.RECT{0, 0, 0, 0}
 
-					var screenLeft int32
-					var screenTop int32
-					screenRight := screenW
-					screenBottom := screenH
+				if win.SystemParametersInfo(win.SPI_GETWORKAREA, 0, unsafe.Pointer(r), 0) {
+					info := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
+					info.PtMinTrackSize.X = rect.Right - rect.Left
+					info.PtMinTrackSize.Y = rect.Bottom - rect.Top
 
-					left, top, right, bottom := GetWorkArea()
-					if left == 0 && top == 0 && bottom == screenH {
-						screenLeft = right //居左
-					} else if left == 0 && top == 0 && right == screenW {
-						screenTop = bottom //居上
-					} else if top == 0 && right == screenW && bottom == screenH {
-						screenRight = left //居右
-					} else if left == 0 && right == screenW && bottom == screenH {
-						screenBottom = top //居下
-					}
-
-					//修改坐标和大小, 让任务栏显示出来
-					//win.SetWindowPos(hWnd, win.HWND_TOP, screenLeft, screenTop, screenRight-screenLeft, screenBottom-screenTop, win.SWP_SHOWWINDOW|win.SWP_FRAMECHANGED|win.SWP_DRAWFRAME|win.SWP_DEFERERASE)
-					win.SetWindowPos(hWnd, win.HWND_TOP, screenLeft, screenTop, screenRight-screenLeft, screenBottom-screenTop, win.SW_SHOWNORMAL)
-					win.SetWindowPos(hWnd, win.HWND_TOP, screenLeft, screenTop, screenRight-screenLeft, screenBottom-screenTop, win.SWP_SHOWWINDOW)
+					info.PtMaxSize.X = r.Right - r.Left
+					info.PtMaxSize.Y = r.Bottom - r.Top
+					info.PtMaxPosition.X = r.Left
+					info.PtMaxPosition.Y = r.Top
 				}
 			}
 		}
-		//win.UpdateWindow(hWnd)
-		//win.SendMessage(hWnd, win.WM_PAINT, wParam, lParam)
-
-	case win.WM_SIZING:
-		//fmt.Println("WM_SIZING ...")
-	case win.WM_GETMINMAXINFO:
-		//fmt.Println("WM_GETMINMAXINFO ...")
 	}
 	return 0
 }
