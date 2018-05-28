@@ -1,22 +1,30 @@
 #include <sciter-x.h>
 
 // getting ISciterAPI reference:
+const char * SCITER_DLL_PATH = SCITER_DLL_NAME;
 
 #ifdef STATIC_LIB
 
     EXTERN_C ISciterAPI* SCAPI SciterAPI();
 
-    ISciterAPI* SAPI( ISciterAPI* ext ) {
-       static ISciterAPI* _api = NULL;
+#if defined(__cplusplus) && !defined(PLAIN_API_ONLY)
+    ISciterAPI* SAPI( ISciterAPI* ext = nullptr ) {
+#else
+    ISciterAPI* SAPI(ISciterAPI* ext) {
+#endif
+       static ISciterAPI* _api = 0;
        if( ext ) _api = ext;
        if( !_api )
        {
           _api = SciterAPI();
-          tiscript::ni( _api->TIScriptAPI() );
+#if defined(__cplusplus) && !defined(PLAIN_API_ONLY)
+          tiscript::ni(_api->TIScriptAPI());
+#endif
        }
+       assert(_api);
        return _api;
     }
-
+    
 #elif defined(WINDOWS)
 
     ISciterAPI* SAPI( ISciterAPI* ext ) {
@@ -24,13 +32,7 @@
        if( ext ) _api = ext;
        if( !_api )
        {
-          HMODULE hm = LoadLibrary( TEXT("sciter.dll") );
-          //#if defined(WIN64) || defined(_WIN64)
-          //  TEXT("sciter64.dll")
-          //#else
-          //  TEXT("sciter32.dll")
-          //#endif
-          //);
+          HMODULE hm = LoadLibraryA( SCITER_DLL_PATH );
           if(hm) {
             SciterAPI_ptr sciterAPI = (SciterAPI_ptr) GetProcAddress(hm, "SciterAPI");
             if( sciterAPI ) {
@@ -52,8 +54,9 @@
        return _api;
     }
 
-
 #elif defined(OSX)
+
+    #include <string.h>
 
     //typedef ISciterAPI* SCAPI (*SciterAPI_ptr)();
 
@@ -70,8 +73,11 @@
             realpath(pathbuf, folderpath);
             *strrchr(folderpath, '/') = '\0';
 
-            void* lib_sciter_handle = dlopen(SCITER_DLL_NAME, RTLD_LOCAL|RTLD_LAZY);
-            if( !lib_sciter_handle ) {
+            // 0. try to load from user-provided library full path.
+            void* lib_sciter_handle = dlopen(SCITER_DLL_PATH, RTLD_LOCAL|RTLD_LAZY);
+            if (!lib_sciter_handle)
+            {
+                // 1. try to load from the same folder as this executable
                 const char* lookup_paths[] =
                 {
                     "/" SCITER_DLL_NAME,
@@ -85,6 +91,9 @@
                     lib_sciter_handle = dlopen(tpath, RTLD_LOCAL|RTLD_LAZY);
                 }
             }
+            if (!lib_sciter_handle) // 2. no luck, try to load from system paths
+              lib_sciter_handle = dlopen(SCITER_DLL_NAME, RTLD_LOCAL | RTLD_LAZY);
+
             if (!lib_sciter_handle) {
                 fprintf(stderr, "[%s] Unable to load library: %s\n", __FILE__, dlerror());
                 exit(EXIT_FAILURE);
@@ -125,8 +134,10 @@
                //strcat  (pathbuf, "/");
             }
 
-            void* lib_sciter_handle = dlopen(SCITER_DLL_NAME, RTLD_LOCAL|RTLD_LAZY);
+            // 0. try to load from user-provided library full path.
+            void* lib_sciter_handle = dlopen(SCITER_DLL_PATH, RTLD_LOCAL|RTLD_LAZY);
             if( !lib_sciter_handle ) {
+                // 1. try to load from the same folder as this executable
                 fprintf(stderr, "[%s] Unable to load library: %s\n", __FILE__, dlerror());
                 const char* lookup_paths[] =
                 {
@@ -182,9 +193,7 @@
 
 
   // defining "official" API functions:
-    HSARCHIVE SCAPI SciterOpenArchive (LPCBYTE archiveData, UINT archiveDataLength) { return SAPI(NULL)->SciterOpenArchive (archiveData,archiveDataLength); }
-    BOOL SCAPI SciterGetArchiveItem (HSARCHIVE harc, LPCWSTR path, LPCBYTE* pdata, UINT* pdataLength){return SAPI(NULL)->SciterGetArchiveItem (harc,path,pdata,pdataLength); }
-    
+
     LPCWSTR SCAPI SciterClassName () { return SAPI(NULL)->SciterClassName(); }
     UINT    SCAPI SciterVersion (BOOL major) { return SAPI(NULL)->SciterVersion (major); }
     BOOL    SCAPI SciterDataReady (HWINDOW hwnd,LPCWSTR uri,LPCBYTE data, UINT dataLength) { return SAPI(NULL)->SciterDataReady (hwnd,uri,data,dataLength); }
@@ -213,9 +222,9 @@
    VOID    SCAPI SciterGetPPI (HWINDOW hWndSciter, UINT* px, UINT* py) { SAPI(NULL)->SciterGetPPI (hWndSciter,px,py); }
    BOOL    SCAPI SciterGetViewExpando ( HWINDOW hwnd, VALUE* pval ) { return SAPI(NULL)->SciterGetViewExpando ( hwnd, pval ); }
 #ifdef WINDOWS
-   BOOL    SCAPI SciterRenderD2D (HWINDOW hWndSciter, ID2D1RenderTarget* prt) { return SAPI(NULL)->SciterRenderD2D (hWndSciter,prt); }
-   BOOL    SCAPI SciterD2DFactory (ID2D1Factory ** ppf) { return SAPI(NULL)->SciterD2DFactory (ppf); }
-   BOOL    SCAPI SciterDWFactory (IDWriteFactory ** ppf) { return SAPI(NULL)->SciterDWFactory (ppf); }
+   BOOL    SCAPI SciterRenderD2D (HWINDOW hWndSciter, IUnknown* /*ID2D1RenderTarget**/ prt) { return SAPI(NULL)->SciterRenderD2D (hWndSciter,prt); }
+   BOOL    SCAPI SciterD2DFactory (void** /*ID2D1Factory ***/ ppf) { return SAPI(NULL)->SciterD2DFactory (ppf); }
+   BOOL    SCAPI SciterDWFactory (void** /*IDWriteFactory ***/ ppf) { return SAPI(NULL)->SciterDWFactory (ppf); }
 #endif
    BOOL    SCAPI SciterGraphicsCaps (LPUINT pcaps) { return SAPI(NULL)->SciterGraphicsCaps (pcaps); }
    BOOL    SCAPI SciterSetHomeURL (HWINDOW hWndSciter, LPCWSTR baseUrl) { return SAPI(NULL)->SciterSetHomeURL (hWndSciter,baseUrl); }
@@ -358,3 +367,15 @@
   BOOL SCAPI Sciter_V2v(HVM vm, const VALUE* value, tiscript_value* out_script_value) { return SAPI(NULL)->Sciter_V2v(vm,value,out_script_value); }
 
   BOOL SCAPI SciterProcX(HWINDOW hwnd, SCITER_X_MSG* pMsg) { return SAPI(NULL)->SciterProcX(hwnd, pMsg); }
+
+	HSARCHIVE SCAPI SciterOpenArchive (LPCBYTE archiveData, UINT archiveDataLength) { 
+		return SAPI(NULL)->SciterOpenArchive (archiveData, archiveDataLength); 
+	}
+
+	BOOL SCAPI SciterGetArchiveItem (HSARCHIVE harc, LPCWSTR path, LPCBYTE* pdata, UINT* pdataLength) {
+		return SAPI(NULL)->SciterGetArchiveItem (harc, path, pdata, pdataLength); 
+	}
+  
+  BOOL SCAPI SciterCloseArchive (HSARCHIVE harc) {
+    return SAPI(NULL)->SciterCloseArchive (harc);
+  }
