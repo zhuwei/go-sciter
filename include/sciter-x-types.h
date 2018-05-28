@@ -70,11 +70,13 @@ enum GFX_LAYER
 #endif
 
 #if defined(WINDOWS)
+  #define WIN32_LEAN_AND_MEAN
+  #define _WINSOCKAPI_
   #include <specstrings.h>
   #include <windows.h>
   #include <oaidl.h>
 
-#if defined(__cplusplus) && !defined( PLAIN_API_ONLY )
+/*#if defined(__cplusplus) && !defined( PLAIN_API_ONLY )
   #include <d2d1.h>
   #include <dwrite.h>
 #else
@@ -85,9 +87,7 @@ enum GFX_LAYER
   typedef struct _ID2D1RenderTarget ID2D1RenderTarget;
   typedef struct _ID2D1Factory ID2D1Factory;
   typedef struct _IDWriteFactory IDWriteFactory;
-
-#endif
-
+#endif*/
 
   #if defined(_MSC_VER) && _MSC_VER < 1900
   // Microsoft has finally implemented snprintf in Visual Studio 2015.
@@ -119,6 +119,8 @@ enum GFX_LAYER
 
   typedef wchar_t wchar;
 
+  #define SCITER_DLL_NAME "sciter.dll"
+
   #ifdef _WIN64
     #define TARGET_64
   #else
@@ -141,7 +143,7 @@ enum GFX_LAYER
   typedef unsigned int UINT;
   typedef int INT;
   typedef unsigned long long UINT64;
-  typedef int INT64;
+  typedef long long INT64;
 
   typedef unsigned char BYTE;
   typedef char16_t WCHAR;
@@ -209,7 +211,7 @@ enum GFX_LAYER
   typedef unsigned int UINT;
   typedef int INT;
   typedef unsigned long long UINT64;
-  typedef int INT64;
+  typedef long long INT64;
 
   typedef unsigned char BYTE;
   typedef char16_t WCHAR;
@@ -252,12 +254,15 @@ enum GFX_LAYER
   #define LRESULT long
   #define HDC void*       // cairo_t
 
-  #ifdef __x86_64
+  #if defined(ARM) || defined(__arm__)
+    #define SCITER_DLL_NAME "libsciter-gtk.so"
+    #define TARGET_ARM
+  #elif defined(__x86_64)
     #define TARGET_64
-    #define SCITER_DLL_NAME "libsciter-gtk-64.so"
+    #define SCITER_DLL_NAME "libsciter-gtk.so"
   #else
     #define TARGET_32
-    #define SCITER_DLL_NAME "libsciter-gtk-32.so"
+    #define SCITER_DLL_NAME "libsciter-gtk.so"
   #endif
 
 
