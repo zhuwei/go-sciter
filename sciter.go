@@ -5,10 +5,12 @@
 package sciter
 
 /*
-#cgo CFLAGS: -g -std=c11 -Iinclude -DPLAIN_API_ONLY
+#cgo CFLAGS: -g -std=c11 -Iinclude -DPLAIN_API_ONLY -D_BSD_SOURCE -D_DEFAULT_SOURCE
 #cgo linux LDFLAGS: -ldl
 #cgo linux pkg-config: gtk+-3.0
+
 #include "sciter-x.h"
+
 extern BOOL SC_CALLBACK SciterElementCallback_cgo(HELEMENT he, LPVOID param);
 extern VOID SC_CALLBACK LPCSTR_RECEIVER_cgo( LPCSTR str, UINT str_length, LPVOID param );
 extern VOID SC_CALLBACK LPCWSTR_RECEIVER_cgo( LPCWSTR str, UINT str_length, LPVOID param );
@@ -22,6 +24,15 @@ extern VOID NATIVE_FUNCTOR_RELEASE_cgo( VOID* tag );
 extern INT SC_CALLBACK ELEMENT_COMPARATOR_cgo( HELEMENT he1, HELEMENT he2, LPVOID param );
 // ValueEnumElements
 extern BOOL SC_CALLBACK KeyValueCallback_cgo(LPVOID param, const VALUE* pkey, const VALUE* pval );
+
+extern const char * SCITER_DLL_PATH;
+
+extern HSARCHIVE SCAPI SciterOpenArchive (LPCBYTE archiveData, UINT archiveDataLength);
+
+extern BOOL SCAPI SciterGetArchiveItem (HSARCHIVE harc, LPCWSTR path, LPCBYTE* pdata, UINT* pdataLength);
+
+extern BOOL SCAPI SciterCloseArchive (HSARCHIVE harc);
+
 */
 import "C"
 import (
@@ -37,10 +48,12 @@ type Sciter struct {
 	callbacks map[*CallbackHandler]struct{}
 	// map scripting function name to NativeFunctor
 	*eventMapper
+	// sciter archive
+	har C.HSARCHIVE
 }
 
 var (
-	BAD_HWINDOW = C.HWINDOW(unsafe.Pointer(uintptr(0)))
+	BAD_HWINDOW C.HWINDOW = nil
 )
 
 func Wrap(hwnd C.HWINDOW) *Sciter {
@@ -74,6 +87,10 @@ func VersionAsString() string {
 
 func (s *Sciter) GetHwnd() C.HWINDOW {
 	return s.hwnd
+}
+
+func SetDLL(dir string) {
+	C.SCITER_DLL_PATH = C.CString(dir)
 }
 
 //This function is used in response to SCN_LOAD_DATA request.
@@ -394,7 +411,7 @@ func (s *Sciter) SetOption(option Sciter_RT_OPTIONS, value uint) (ok bool) {
 func SetOption(option Sciter_RT_OPTIONS, value uint) (ok bool) {
 	coption := C.UINT(option)
 	cvalue := C.UINT_PTR(value)
-	hwnd := C.HWINDOW(nil)
+	hwnd := BAD_HWINDOW
 	r := C.SciterSetOption(hwnd, coption, cvalue)
 	if r == 0 {
 		return false
@@ -430,6 +447,32 @@ func (s *Sciter) SetHomeURL(baseUrl string) (ok bool) {
 		return false
 	}
 	return true
+}
+
+// Open a data blob of the Sciter compressed archive.
+func (s *Sciter) OpenArchive(data []byte) {
+	s.har = C.SciterOpenArchive((*C.BYTE)(&data[0]), C.UINT(len(data)))
+}
+
+// Get an archive item referenced by \c uri.
+//
+// Usually it is passed to \c Sciter.DataReady().
+func (s *Sciter) GetArchiveItem(uri string) []byte {
+	var data C.LPCBYTE
+	var length C.UINT
+	cdata := (*C.LPCBYTE)(&data)
+	r := C.SciterGetArchiveItem(s.har, StringToWcharPtr(uri), cdata, &length)
+	if r == 0 {
+		return nil
+	}
+	ret := ByteCPtrToBytes(data, length)
+	return ret
+}
+
+// Close the archive.
+func (s *Sciter) CloseArchive() {
+	C.SciterCloseArchive(s.har)
+	s.har = C.HSARCHIVE(nil)
 }
 
 // #if defined(OSX)
@@ -638,14 +681,7 @@ func (e *Element) ParentElement() (*Element, error) {
 
 //export goLPCBYTE_RECEIVER
 func goLPCBYTE_RECEIVER(bs *byte, n uint, param unsafe.Pointer) int {
-	var r []byte
-	p := uintptr(unsafe.Pointer(bs))
-	println("goLPCBYTE_RECEIVER:", n)
-	for i := 0; i < int(n); i++ {
-		u := *(*byte)(unsafe.Pointer(p + uintptr(i)))
-		r = append(r, u)
-	}
-	println("in:", string(r))
+	r := BytePtrToBytes(bs, n)
 	*(*[]byte)(param) = r
 	return 0
 }
@@ -662,9 +698,9 @@ func goLPCWSTR_RECEIVER(bs *uint16, n uint, param unsafe.Pointer) int {
 // typedef VOID SC_CALLBACK LPCSTR_RECEIVER( LPCSTR str, UINT str_length, LPVOID param );
 
 //export goLPCSTR_RECEIVER
-func goLPCSTR_RECEIVER(bs *byte, n uint, param unsafe.Pointer) int {
+func goLPCSTR_RECEIVER(bs C.LPCSTR, n uint, param unsafe.Pointer) int {
 	s := (*string)(param)
-	*s = BytePtrToString(bs)
+	*s = C.GoString(bs)
 	return 0
 }
 
@@ -741,10 +777,8 @@ func (e *Element) SetText(text string) error {
 //   \return \b #SCDOM_RESULT SCAPI
 func (e *Element) AttrCount() (int, error) {
 	var count C.UINT
-	// args
-	ccount := C.LPUINT(&count)
 	// cgo call
-	r := C.SciterGetAttributeCount(e.handle, ccount)
+	r := C.SciterGetAttributeCount(e.handle, &count)
 	return int(count), wrapDomResult(r, "SciterGetAttributeCount")
 }
 
@@ -791,11 +825,12 @@ func (e *Element) NthAttr(n int) (value string, err error) {
 func (e *Element) Attr(name string) (string, error) {
 	var str string
 	// args
-	cname := C.LPCSTR(unsafe.Pointer(&((([]byte)(name))[0])))
+	cname := C.CString(name)
 	crcv := (*C.LPCWSTR_RECEIVER)(unsafe.Pointer(C.LPCWSTR_RECEIVER_cgo))
 	cparam := C.LPVOID(unsafe.Pointer(&str))
 	// cgo call
 	r := C.SciterGetAttributeByNameCB(e.handle, cname, crcv, cparam)
+	C.free(unsafe.Pointer(cname))
 	return str, wrapDomResult(r, "SciterGetAttributeByNameCB")
 }
 
@@ -808,10 +843,11 @@ func (e *Element) Attr(name string) (string, error) {
 //  \return \b #SCDOM_RESULT SCAPI
 func (e *Element) SetAttr(name, val string) error {
 	// args
-	cname := C.LPCSTR(unsafe.Pointer(&((([]byte)(name))[0])))
+	cname := C.CString(name)
 	cval := C.LPCWSTR(StringToWcharPtr(val))
 	// cgo call
 	r := C.SciterSetAttributeByName(e.handle, cname, cval)
+	C.free(unsafe.Pointer(cname))
 	return wrapDomResult(r, "SciterSetAttributeByName")
 }
 
@@ -868,11 +904,12 @@ func (e *Element) Type() (string, error) {
 func (e *Element) Style(name string) (string, error) {
 	var str string
 	// args
-	cname := C.LPCSTR(unsafe.Pointer(&((([]byte)(name))[0])))
+	cname := C.CString(name)
 	crcv := (*C.LPCWSTR_RECEIVER)(unsafe.Pointer(C.LPCWSTR_RECEIVER_cgo))
 	cparam := C.LPVOID(unsafe.Pointer(&str))
 	// cgo call
 	r := C.SciterGetStyleAttributeCB(e.handle, cname, crcv, cparam)
+	C.free(unsafe.Pointer(cname))
 	return str, wrapDomResult(r, "SciterGetStyleAttributeCB")
 }
 
@@ -880,10 +917,11 @@ func (e *Element) Style(name string) (string, error) {
 
 func (e *Element) SetStyle(name, val string) error {
 	// args
-	cname := C.LPCSTR(unsafe.Pointer(&((([]byte)(name))[0])))
+	cname := C.CString(name)
 	cval := C.LPCWSTR(StringToWcharPtr(val))
 	// cgo call
 	r := C.SciterSetStyleAttribute(e.handle, cname, cval)
+	C.free(unsafe.Pointer(cname))
 	return wrapDomResult(r, "SciterSetStyleAttribute")
 }
 
@@ -1991,21 +2029,15 @@ func (pdst *Value) SetFloat(data float64) error {
 func (pdst *Value) Bytes() []byte {
 	cpdst := (*C.VALUE)(unsafe.Pointer(pdst))
 	// args
-	var pv uintptr = 0
-	var length uint = 0
+	var pv C.LPCBYTE
+	var length C.UINT
 	pBytes := (*C.LPCBYTE)(unsafe.Pointer(&pv))
-	pnBytes := (*C.UINT)(unsafe.Pointer(&length))
 	// cgo call
-	r := C.ValueBinaryData(cpdst, pBytes, pnBytes)
+	r := C.ValueBinaryData(cpdst, pBytes, &length)
 	if r != C.UINT(HV_OK) {
 		return nil
 	}
-	ret := []byte{}
-	sz := unsafe.Sizeof(pv)
-	for i := 0; i < int(length); i++ {
-		b := *(*byte)(unsafe.Pointer(pv + uintptr(i)*sz))
-		ret = append(ret, b)
-	}
+	ret := ByteCPtrToBytes(pv, length)
 	return ret
 }
 
