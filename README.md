@@ -1,8 +1,19 @@
+# Go bindings for Sciter
+
+[![Build status](https://ci.appveyor.com/api/projects/status/rphv883klffw9em9/branch/master?svg=true)](https://ci.appveyor.com/project/pravic/go-sciter)
+[![Build Status](https://img.shields.io/travis/sciter-sdk/go-sciter/master.svg)](https://travis-ci.org/sciter-sdk/go-sciter)
+[![License](https://img.shields.io/github/license/sciter-sdk/go-sciter.svg)](https://github.com/sciter-sdk/go-sciter)
+[![Join the forums at https://sciter.com/forums](https://img.shields.io/badge/forum-sciter.com-orange.svg)](https://sciter.com/forums)
+
+Check [this page](http://sciter.com/developers/sciter-sdk-bindings/) for other language bindings (Delphi / D / Go / .NET / Python / Rust).
+
+----
+
+
 # Attention
 
-The ownership of project is transferred to this new organization. 
-Thus the `import path` for golang should now be `github.com/sciter-sdk/go-sciter`, 
-but the package name is still `sciter`.
+The ownership of project is transferred to this new organization.
+Thus the `import path` for golang should now be `github.com/sciter-sdk/go-sciter`, but the package name is still `sciter`.
 
 # Introduction
 
@@ -31,25 +42,28 @@ Things that are not supported:
 
 # Getting Started
 
+###  At the moment only **Go 1.10** or higher is supported (issue #136).
+
  1. Download the [sciter-sdk][]
  2. Extract the sciter runtime library from [sciter-sdk][] to system PATH
 
     The runtime libraries lives in `bin` `bin.gtk` `bin.osx` with suffix like `dll` `so` or `dylib`
 
     * Windows: simply copying `bin\64\sciter.dll` to `c:\windows\system32` is just enough
-    * Linux: 
-      - `cd sciter-sdk/bin.gtk/`
+    * Linux:
+      - `cd sciter-sdk/bin.gtk/x64`
+      - `export LIBRARY_PATH=$PWD`
       - `echo $PWD >> libsciter.conf`
       - `sudo cp libsciter.conf /etc/ld.so.conf.d/`
       - `sudo ldconfig`
-      - `ldconfig -p | grep sciter` should print libsciter-gtk-64.so location
+      - `ldconfig -p | grep sciter` should print libsciter-gtk.so location
     * OSX:
       - `cd sciter-sdk/bin.osx/`
       - `export DYLD_LIBRARY_PATH=$PWD`
 
  3. Set up GCC envrionmnet for CGO
 
-    [mingw64-gcc][] (5.2.0 is tested) is recommended for Windows users.
+    [mingw64-gcc][] (5.2.0 and 7.2.0 are tested) is recommended for Windows users.
 
     Under Linux gcc(4.8 or above) and gtk+-3.0 are needed.
 
